@@ -20,10 +20,9 @@ This project implements a Retrieval-Augmented Generation (RAG) system for the Si
 
 1.  **Clone the repository** (if not already done).
 
-2.  **Create a virtual environment** and install dependencies:
+2.  **Install dependencies**:
     ```bash
-    uv venv
-    uv pip install -r requirements.txt
+    uv sync
     ```
 
 3.  **Set up environment variables**:
@@ -34,24 +33,35 @@ This project implements a Retrieval-Augmented Generation (RAG) system for the Si
 
 ## Usage
 
-1.  **Start the server**:
+1.  **Generate the Document Database**:
+    If this is your first time checking out the repository, run the scraper to recursively pull and chunk the Site3D engineering documentation direct from the web.
     ```bash
-    uv run uvicorn api.server:app --reload
+    uv run run_scrape.py
     ```
 
-2.  **Access the UI**:
+2.  **Start the server**:
+    ```bash
+    uv run uvicorn api.server:app
+    ```
+
+3.  **Access the UI**:
     Open your browser and navigate to `http://localhost:8000`.
 
 ## Project Structure
 
 - `api/`: Contains the FastAPI server and vector store logic.
   - `server.py`: The main FastAPI application.
-  - `vector_store.py`: Handles ChromaDB initialization and retrieval.
-- `data/`: Stores the ChromaDB database files.
-- `docs/`: Contains the documentation content used for indexing.
+  - `vector_store.py`: Handles ChromaDB initialization and embedding generation.
+- `scraper/`: The documentation ingestion pipeline.
+  - `crawler.py`: Recursive web crawler respecting anti-scraping blockers.
+  - `preprocessor.py`: Transforms raw HTML DOM trees and handles Image placeholder links.
+  - `converter.py`: Transforms HTML layouts into clean Markdown formatting.
+  - `chunker.py`: Semantically chunks Markdown along header breaks for embedding context.
+- `data/`: Stores the ChromaDB database and physical chunk outputs (generated locally).
 - `static/`: Frontend HTML, CSS, and JavaScript.
-  - `index.html`: The chat interface.
+  - `index.html`: The chat interface UI.
   - `style.css`: Styles for the interface.
-  - `script.js`: Client-side logic for the chat.
-- `requirements.txt`: Project dependencies.
-- `.env`: Environment variables (should not be committed to version control).
+  - `script.js`: Reactive text streaming rendering loop.
+- `run_scrape.py`: CLI execution script for the data ingestion pipeline.
+- `pyproject.toml` & `uv.lock`: Project dependencies and configuration.
+- `.env`: API environment variable targets (ignored by tracking).
