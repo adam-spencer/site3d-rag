@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Site3D Engineering AI</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <!-- Marked.js for markdown parsing -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+<body>
+    <div class="background-mesh"></div>
+    <div class="chat-container">
+        <header>
+            <div class="header-title">Site3D Documentation AI</div>
+            <div class="header-subtitle">Powered by Gemini & ChromaDB</div>
+        </header>
+
+        <main id="chat-box" class="chat-box">
+            <div class="message ai-message">
+                <div class="message-content">Hello! I am your Site3D expert. Ask me how to calculate earthwork volumes, add a roundabout, or configure your survey contours!</div>
+            </div>
+        </main>
+
+        <div class="input-area">
+            <input type="text" id="user-input" placeholder="Type your question..." autocomplete="off">
+            <button id="send-btn" aria-label="Send Message">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="22" y1="2" x2="11" y2="13"></line>
+                    <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                </svg>
+            </button>
+        </div>
+    </div>
+    
+    <script src="/static/script.js"></script>
+</body>
+</html>
