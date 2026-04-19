@@ -1,3 +1,13 @@
+---
+title: Site3D RAG
+emoji: 🏗️
+colorFrom: yellow
+colorTo: orange
+sdk: docker
+app_port: 8000
+pinned: false
+---
+
 # Site3D RAG System
 
 This project implements a Retrieval-Augmented Generation (RAG) system for the Site3D software documentation. It uses a local vector database (ChromaDB) and Google's Gemini API to provide intelligent answers to user queries based on the documentation content.
