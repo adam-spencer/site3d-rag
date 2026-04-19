@@ -17,6 +17,8 @@ def main():
     pages = crawler.crawl(max_pages=MAX_PAGES)
     
     all_chunks = []
+    parent_docs = {}
+    
     
     # 2. Process each page
     for url, html_content in pages.items():
@@ -27,6 +29,9 @@ def main():
         
         # Convert to Markdown
         markdown_text = convert_to_markdown(processed_html)
+        
+        # Save full document for Parent-Child retrieval
+        parent_docs[url] = markdown_text
         
         # Chunk text semantically
         chunks = chunk_markdown(markdown_text, url, title)
@@ -45,6 +50,13 @@ def main():
             f.write(json.dumps(record, ensure_ascii=False) + '\n')
             
     print(f"Successfully wrote data to {output_filename}")
+    
+    # 4. Export Parent Documents mapping to pages.json
+    pages_filename = "data/pages.json"
+    with open(pages_filename, 'w', encoding='utf-8') as f:
+        json.dump(parent_docs, f, ensure_ascii=False, indent=2)
+        
+    print(f"Successfully wrote parent document maps to {pages_filename}")
 
 if __name__ == "__main__":
     main()

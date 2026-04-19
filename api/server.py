@@ -25,6 +25,13 @@ class ChatRequest(BaseModel):
     query: str
 
 try:
+    with open("data/pages.json", "r", encoding="utf-8") as f:
+        parent_docs = json.load(f)
+except Exception as e:
+    print(f"Warning: Failed to load parent documents, fallback to chunks-only mode: {e}")
+    parent_docs = {}
+
+try:
     retriever = vector_store.get_retriever()
     llm = ChatGoogleGenerativeAI(model="gemini-3.1-flash-lite-preview", temperature=0)
     template = """You are an expert engineering assistant for the Site3D software. Use the following context to answer the user's question clearly and accurately.
@@ -76,9 +83,24 @@ async def chat_stream(request: ChatRequest):
             # Explicitly thread the local ChromaDB call which completely stalls the underlying Python thread CPU
             docs = await asyncio.to_thread(retriever.invoke, request.query)
             
-            yield json.dumps({"status": f"Retrieved {len(docs)} documents. Waiting for Gemini..."}) + "\n"
+            yield json.dumps({"status": f"Retrieved {len(docs)} documents. Retrieving parent pages..."}) + "\n"
             await asyncio.sleep(0.05)
-            context_str = "\n\n".join(doc.page_content for doc in docs)
+            
+            # --- SMALL TO BIG RETRIEVAL ---
+            # 1. Extract the unique source URLs from the Top-K small matching chunks
+            urls = list(dict.fromkeys(doc.metadata.get("source_url") for doc in docs if doc.metadata.get("source_url")))
+            
+            # 2. Pull the complete overarching parent documents perfectly out of local memory dict
+            full_pages = [parent_docs[url] for url in urls if url in parent_docs]
+            
+            # If for some reason pages were missing, natively fallback to raw snippet chunks
+            if not full_pages:
+                context_str = "\n\n".join(doc.page_content for doc in docs)
+            else:
+                context_str = "\n\n---\n\n".join(full_pages)
+                
+            yield json.dumps({"status": f"Expanded to {len(full_pages)} parent documents. Waiting for Gemini..."}) + "\n"
+            await asyncio.sleep(0.05)
             
             # Pre-format images into absolute Markdown links so the LLM simply copies them
             def replace_img(m):
