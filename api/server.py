@@ -36,6 +36,13 @@ try:
     llm = ChatGoogleGenerativeAI(model="gemini-3.1-flash-lite-preview", temperature=0)
     template = """You are an expert engineering assistant for the Site3D software. Use the following context to answer the user's question clearly and accurately.
 
+Each document is labeled with a SOURCE URL. 
+CRITICAL CITATION RULES:
+Whenever you state a fact derived from the provided documents, you MUST warp the relevant phrase or sentence in a standard markdown link pointing to the source URL. 
+For example: `[The offset distance determines the camera path](https://www.site3d.co.uk/help/forward-visibility.htm)`
+DO NOT use traditional bracket numbers like [1]. Let the sentence text itself be the clickable link!
+IMPORTANT IMMUNITY: Any images located in the context (formatted as `![alt_text](url)`) MUST NOT be wrapped in a citation link. If you output an image, copy it natively as an image `![alt_text](url)` completely separate from any sentence links. 
+
 The context may contain images already formatted as valid Markdown links (e.g. `![alt_text](url)`). When you reference a UI tool, window, or concept that has an image available in the context, you MUST natively copy the exact Markdown image link into your response to show it to the user. Do not modify the URLs. 
 
 Context:
@@ -95,9 +102,10 @@ async def chat_stream(request: ChatRequest):
             
             # If for some reason pages were missing, natively fallback to raw snippet chunks
             if not full_pages:
-                context_str = "\n\n".join(doc.page_content for doc in docs)
+                context_str = "\n\n".join(f"DOCUMENT SOURCE URL: {doc.metadata.get('source_url', 'Unknown')}\n{doc.page_content}" for doc in docs)
             else:
-                context_str = "\n\n---\n\n".join(full_pages)
+                context_pieces = [f"DOCUMENT SOURCE URL: {url}\n{parent_docs[url]}" for url in urls if url in parent_docs]
+                context_str = "\n\n---\n\n".join(context_pieces)
                 
             yield json.dumps({"status": f"Expanded to {len(full_pages)} parent documents. Waiting for Gemini..."}) + "\n"
             await asyncio.sleep(0.05)

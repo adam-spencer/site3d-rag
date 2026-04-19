@@ -136,7 +136,22 @@ header {
     border-radius: 4px;
     font-family: monospace;
 }
-.ai-message .message-content a { color: #60a5fa; }
+.ai-message .message-content a,
+.ai-message .message-content a:link,
+.ai-message .message-content a:visited { 
+    color: var(--text-color) !important; 
+    text-decoration: none !important;
+    background-color: rgba(255, 255, 255, 0.1) !important;
+    padding: 2px 4px !important;
+    border-radius: 4px !important;
+    border-bottom: none !important;
+    transition: background-color 0.2s ease !important;
+}
+.ai-message .message-content a:hover,
+.ai-message .message-content a:active {
+    background-color: rgba(255, 255, 255, 0.25) !important;
+    cursor: pointer !important;
+}
 .ai-message .message-content pre {
     background: rgba(0,0,0,0.3);
     padding: 10px;

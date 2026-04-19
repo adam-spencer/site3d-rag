@@ -122,3 +122,11 @@ sendBtn.addEventListener('click', handleSend);
 userInput.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') handleSend();
 });
+
+// Implement Event Delegation for generated links to keep chat session alive
+chatBox.addEventListener('click', (e) => {
+    if (e.target.tagName === 'A') {
+        e.preventDefault();
+        window.open(e.target.href, '_blank');
+    }
+});
