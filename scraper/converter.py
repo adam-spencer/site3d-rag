@@ -1,6 +1,7 @@
 import markdownify
 import re
 
+
 def convert_to_markdown(html_content: str) -> str:
     """Convert HTML string to Markdown, preserving links and using ATX headers."""
     # heading_style="ATX" ensures markdown uses '#' instead of underlines
@@ -8,10 +9,10 @@ def convert_to_markdown(html_content: str) -> str:
     md_text = markdownify.markdownify(
         html_content,
         heading_style="ATX",
-        strip=['script', 'style', 'nav', 'footer', 'iframe']
+        strip=["script", "style", "nav", "footer", "iframe"],
     )
-    
+
     # Collapse 3+ consecutive newlines into 2 to keep layout neat
-    md_text = re.sub(r'\n{3,}', '\n\n', md_text)
-    
+    md_text = re.sub(r"\n{3,}", "\n\n", md_text)
+
     return md_text.strip()
