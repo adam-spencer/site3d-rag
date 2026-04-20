@@ -1,7 +1,7 @@
 [project]
 name = "site3d-rag"
 version = "0.1.0"
-description = "Add your description here"
+description = "RAG assistant for querying Site3D engineering documentation using ChromaDB and Gemini"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
