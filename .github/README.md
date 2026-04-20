@@ -52,7 +52,7 @@ The ingestion pipeline uses `requests` and `BeautifulSoup4` for crawling and DOM
 1.  **Generate the Document Database**:
     If this is your first time checking out the repository, run the scraper to crawl and chunk the Site3D documentation.
     ```bash
-    uv run run_scrape.py
+    uv run python -m scraper
     ```
 
 2.  **Start the server**:
@@ -78,7 +78,7 @@ The ingestion pipeline uses `requests` and `BeautifulSoup4` for crawling and DOM
   - `index.html`: Chat interface with a password authentication overlay.
   - `style.css`: Dark-mode glassmorphic design system with inline icon alignment and citation styling.
   - `script.js`: NDJSON stream reader, incremental Markdown rendering, image path correction, and link delegation.
-- `run_scrape.py`: Entry point for the data ingestion pipeline.
+  - `__main__.py`: Entry point for the data ingestion pipeline (`python -m scraper`).
 - `pyproject.toml` & `uv.lock`: Project dependencies and configuration.
 - `Dockerfile`: Container configuration for HuggingFace Spaces deployment (binds to `0.0.0.0:8000`).
 - `.env`: Environment variables for API keys and authentication (not tracked in git).
