@@ -4,7 +4,7 @@ from typing import Tuple
 
 
 def is_icon(img, filename: str) -> bool:
-    """Determine if a given img tag is an icon based on heuristics."""
+    """Heuristic check for icon-sized images."""
     keywords = ["icon", "button", "btn", "toolbar", "small"]
     if any(keyword in filename.lower() for keyword in keywords):
         return True
@@ -13,7 +13,6 @@ def is_icon(img, filename: str) -> bool:
     height = img.get("height")
 
     try:
-        # Check if width and height are small explicitly
         if width and int(width) <= 48 and height and int(height) <= 48:
             return True
     except (ValueError, TypeError):
@@ -23,15 +22,13 @@ def is_icon(img, filename: str) -> bool:
 
 
 def clean_filename_for_icon(filename: str) -> str:
-    """Format icon filename to string format."""
+    """Convert filename to readable label."""
     name_without_ext = os.path.splitext(filename)[0]
     return name_without_ext.replace("_", " ").replace("-", " ").strip()
 
 
 def process_image_element(img) -> str:
-    """Process a single image tag and return the replacement text.
-    Designed modularly to allow Vision API swapping in the future.
-    """
+    """Convert an img tag to a markdown placeholder."""
     src = img.get("src", "")
     filename = os.path.basename(src) if src else "unknown"
     alt_text = img.get("alt", "").strip()
@@ -42,7 +39,6 @@ def process_image_element(img) -> str:
         else:
             return f"[Icon: {clean_filename_for_icon(filename)}]({src})"
     else:
-        # It's a screenshot
         screenshot_text = f"[Screenshot: {filename}"
         if alt_text:
             screenshot_text += f" - {alt_text}"
@@ -51,14 +47,12 @@ def process_image_element(img) -> str:
 
 
 def process_html(raw_html: str) -> Tuple[str, str]:
-    """Process raw HTML, replacing images and returning clean HTML and page title."""
+    """Replace images with markdown placeholders and extract page title."""
     soup = BeautifulSoup(raw_html, "html.parser")
 
-    # Extract title
     title_tag = soup.find("title")
     page_title = title_tag.get_text(strip=True) if title_tag else "Unknown Title"
 
-    # Process images
     for img in soup.find_all("img"):
         replacement_text = process_image_element(img)
         img.replace_with(replacement_text)

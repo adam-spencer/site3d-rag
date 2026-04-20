@@ -18,7 +18,6 @@ load_dotenv()
 
 app = FastAPI(title="Site3D RAG Demo")
 
-# Create simple static directory for the HTML frontend
 os.makedirs("static", exist_ok=True)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
@@ -80,10 +79,9 @@ async def root():
 
 @app.post("/chat/stream")
 async def chat_stream(request: ChatRequest):
-    # --- STATELESS FAIL-CLOSED AUTHENTICATION ---
     expected_password = os.getenv("APP_PASSWORD")
     if not expected_password:
-        # FAIL CLOSED: If the env variable is missing, generate an impossible target to lock out everyone
+        # Fail closed: no env var = impossible password
         expected_password = secrets.token_hex(32)
 
     if request.password != expected_password:
@@ -116,18 +114,16 @@ async def chat_stream(request: ChatRequest):
         import asyncio
 
         try:
-            # Massive buffer padding to force ASGI & Proxy servers to instantly drop the chunk to the client
+            # Pad to flush through ASGI/proxy buffering
             yield (
                 json.dumps({"status": "Connecting to engine..."}) + (" " * 2048) + "\n"
             )
             await asyncio.sleep(0.05)
 
             yield json.dumps({"status": "Retrieving context from ChromaDB..."}) + "\n"
-            await asyncio.sleep(
-                0.05
-            )  # Force the ASGI worker to flush the stream to the socket
+            await asyncio.sleep(0.05)
 
-            # Explicitly thread the local ChromaDB call which completely stalls the underlying Python thread CPU
+            # ChromaDB is blocking; offload to thread
             docs = await asyncio.to_thread(retriever.invoke, request.query)
 
             yield (
@@ -140,8 +136,7 @@ async def chat_stream(request: ChatRequest):
             )
             await asyncio.sleep(0.05)
 
-            # --- SMALL TO BIG RETRIEVAL ---
-            # 1. Extract the unique source URLs from the Top-K small matching chunks
+            # Small-to-big: expand matched chunks to full parent pages
             urls = list(
                 dict.fromkeys(
                     doc.metadata.get("source_url")
@@ -150,10 +145,9 @@ async def chat_stream(request: ChatRequest):
                 )
             )
 
-            # 2. Pull the complete overarching parent documents perfectly out of local memory dict
             full_pages = [parent_docs[url] for url in urls if url in parent_docs]
 
-            # If for some reason pages were missing, natively fallback to raw snippet chunks
+            # Fallback to raw chunks if parent docs missing
             if not full_pages:
                 context_str = "\n\n".join(
                     f"DOCUMENT SOURCE URL: {doc.metadata.get('source_url', 'Unknown')}\n{doc.page_content}"
@@ -177,7 +171,7 @@ async def chat_stream(request: ChatRequest):
             )
             await asyncio.sleep(0.05)
 
-            # Pre-format images into absolute HTML img tags to prevent LLM markdown corruption
+            # Convert markdown images to HTML to prevent LLM mangling
             def replace_img(m):
                 alt = m.group(1)
                 src = m.group(2)

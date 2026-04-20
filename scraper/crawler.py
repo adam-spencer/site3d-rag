@@ -11,7 +11,6 @@ class Site3DCrawler:
         self.visited = set()
         self.queue = [base_url]
         self.pages: Dict[str, str] = {}
-        # Standard headers to bypass basic anti-scraping
         self.headers = {
             "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36",
             "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
@@ -21,9 +20,8 @@ class Site3DCrawler:
         }
 
     def _is_valid_link(self, url: str) -> bool:
-        """Ensure we only crawl the site3d help `.htm` or `.html` pages."""
+        """Only allow site3d help pages."""
         parsed_url = urlparse(url)
-        # Verify domain, path, and extension
         if "site3d.co.uk" not in parsed_url.netloc:
             return False
         if "/help/" not in parsed_url.path:
@@ -37,8 +35,6 @@ class Site3DCrawler:
 
         while self.queue and len(self.visited) < max_pages:
             current_url = self.queue.pop(0)
-
-            # Remove fragment/anchor for unicity
             clean_url, _ = urldefrag(current_url)
 
             if clean_url in self.visited:
@@ -54,7 +50,6 @@ class Site3DCrawler:
                 html_content = response.text
                 self.pages[clean_url] = html_content
 
-                # Parse to extract links recursively
                 soup = BeautifulSoup(html_content, "html.parser")
                 for a_tag in soup.find_all("a", href=True):
                     raw_href = a_tag["href"]
@@ -71,7 +66,7 @@ class Site3DCrawler:
             except requests.RequestException as e:
                 print(f"[!] Failed to fetch {clean_url}: {e}")
 
-            # Sleep 1 second to pace requests and respect rate limiting
+            # Rate-limit
             time.sleep(1.0)
 
         print(f"Crawl completed. Successfully fetched {len(self.pages)} pages.")

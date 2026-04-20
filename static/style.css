@@ -164,7 +164,6 @@ header {
     word-break: break-word;
 }
 
-/* Specific styling for the beautiful generated images */
 .message-content img {
     max-width: 100%;
     border-radius: 8px;
@@ -197,7 +196,6 @@ header {
     border: 1px solid var(--border-color);
 }
 
-/* Markdown typography styling */
 .ai-message .message-content p { margin: 0 0 10px 0; }
 .ai-message .message-content p:last-child { margin-bottom: 0; }
 .ai-message .message-content code {
@@ -281,7 +279,6 @@ header {
     height: 20px;
 }
 
-/* Typing indicator micro-animation */
 .typing-indicator {
     display: flex;
     align-items: center;

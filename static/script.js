@@ -71,13 +71,11 @@ async function handleSend() {
     userInput.value = '';
     appendMessage('user', text);
     
-    // Create the AI message container early
     const msgDiv = document.createElement('div');
     msgDiv.className = 'message ai-message';
     const contentDiv = document.createElement('div');
     contentDiv.className = 'message-content';
     
-    // Add an initial pulsing status
     contentDiv.innerHTML = `<span class="status-indicator"><em>Initializing Request...</em></span>`;
     msgDiv.appendChild(contentDiv);
     chatBox.appendChild(msgDiv);
@@ -109,7 +107,7 @@ async function handleSend() {
             if (value) {
                 buffer += decoder.decode(value, {stream: true});
                 const lines = buffer.split("\n");
-                // The last line is either empty or an incomplete chunk, store it until the next flush
+                // Keep incomplete trailing line for next read
                 buffer = lines.pop();
                 
                 for (let line of lines) {
@@ -119,14 +117,14 @@ async function handleSend() {
                         
                         if (data.status) {
                             if (data.clear) {
-                                contentDiv.innerHTML = ""; // Clear the status indicator text
+                                contentDiv.innerHTML = "";
                             } else {
                                 contentDiv.innerHTML = `<span class="status-indicator"><em>${data.status}</em></span>`;
                             }
                         }
                         if (data.chunk) {
                             aiText += data.chunk;
-                            // Auto-correct LLM hallucinations where it aggressively truncates the '/images/' directory from the generated HTML SRC path
+                            // Fix LLM dropping '/images/' from doc image paths
                             let correctedText = aiText.replace(/https:\/\/(www\.)?site3d\.co\.uk\/help\/(?!images\/)([^"'\)\]>\s]+\.(png|jpg|jpeg|gif))/gi, "https://www.site3d.co.uk/help/images/$2");
                             contentDiv.innerHTML = marked.parse(correctedText);
                         }
@@ -154,7 +152,7 @@ userInput.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') handleSend();
 });
 
-// Implement Event Delegation for generated links to keep chat session alive
+// Open generated links in new tab via delegation
 chatBox.addEventListener('click', (e) => {
     if (e.target.tagName === 'A') {
         e.preventDefault();

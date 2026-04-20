@@ -15,7 +15,7 @@ def load_chunks(file_path: str = "data/chunks.jsonl") -> list:
             if not line.strip():
                 continue
             data = json.loads(line)
-            # Ensure metadata values are flat to avoid Chroma validation issues
+            # Flatten nested metadata for Chroma compatibility
             metadata = data.get("metadata", {})
             flat_meta = {}
             for k, v in metadata.items():
@@ -31,7 +31,6 @@ def load_chunks(file_path: str = "data/chunks.jsonl") -> list:
 
 
 def get_vector_store():
-    # Use standard sentence transformers for local embeddings (lightweight, runs cleanly via transformers)
     embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
     persist_directory = "./data/chroma_db"
 
@@ -59,5 +58,4 @@ def get_retriever():
 
 
 if __name__ == "__main__":
-    # Test loading and initializing
     get_vector_store()
