@@ -11,7 +11,20 @@
 </head>
 <body>
     <div class="background-mesh"></div>
-    <div class="chat-container">
+
+    <div id="auth-modal" class="auth-modal">
+        <div class="auth-box">
+            <div class="header-title">Authentication Required</div>
+            <div class="header-subtitle" style="margin-bottom: 20px;">Please enter the system password to access the AI.</div>
+            <div style="display: flex; gap: 10px;">
+                <input type="password" id="auth-input" placeholder="Password...">
+                <button id="auth-submit">Unlock</button>
+            </div>
+            <div id="auth-error" style="color: #ef4444; font-size: 0.85rem; margin-top: 10px; display: none;">Incorrect password. Please try again.</div>
+        </div>
+    </div>
+
+    <div class="chat-container" id="main-chat" style="display: none;">
         <header>
             <div class="header-title">Site3D Documentation AI</div>
             <div class="header-subtitle">Powered by Gemini & ChromaDB</div>

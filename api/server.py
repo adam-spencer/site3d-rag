@@ -1,5 +1,6 @@
 import os
 import re
+import secrets
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, StreamingResponse
@@ -23,6 +24,7 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 
 class ChatRequest(BaseModel):
     query: str
+    password: str = ""
 
 try:
     with open("data/pages.json", "r", encoding="utf-8") as f:
@@ -72,6 +74,17 @@ async def root():
 
 @app.post("/chat/stream")
 async def chat_stream(request: ChatRequest):
+    # --- STATELESS FAIL-CLOSED AUTHENTICATION ---
+    expected_password = os.getenv("APP_PASSWORD")
+    if not expected_password:
+        # FAIL CLOSED: If the env variable is missing, generate an impossible target to lock out everyone 
+        expected_password = secrets.token_hex(32)
+        
+    if request.password != expected_password:
+        async def unauthorized():
+            yield json.dumps({"error": "Unauthorized. Invalid or missing password."}) + "\n"
+        return StreamingResponse(unauthorized(), media_type="application/x-ndjson", status_code=401)
+        
     if rag_chain is None:
         async def fallback():
             yield json.dumps({"error": "RAG Chain failed to initialize. Check GEMINI_API_KEY environment variable and vector database."}) + "\n"

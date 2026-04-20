@@ -1,6 +1,26 @@
 const chatBox = document.getElementById('chat-box');
 const userInput = document.getElementById('user-input');
 const sendBtn = document.getElementById('send-btn');
+const authModal = document.getElementById('auth-modal');
+const mainChat = document.getElementById('main-chat');
+const authSubmit = document.getElementById('auth-submit');
+const authInput = document.getElementById('auth-input');
+
+let systemPassword = "";
+
+function unlockChat() {
+    const pwd = authInput.value.trim();
+    if (pwd) {
+        systemPassword = pwd;
+        authModal.style.display = 'none';
+        mainChat.style.display = 'flex';
+    }
+}
+
+authSubmit.addEventListener('click', unlockChat);
+authInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') unlockChat();
+});
 
 function scrollToBottom() {
     chatBox.scrollTop = chatBox.scrollHeight;
@@ -67,10 +87,15 @@ async function handleSend() {
         const response = await fetch('/chat/stream', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ query: text })
+            body: JSON.stringify({ query: text, password: systemPassword })
         });
         
-        if (!response.ok) throw new Error("Network response was not ok.");
+        if (!response.ok) {
+            if (response.status === 401) {
+                throw new Error("401");
+            }
+            throw new Error("Network response was not ok.");
+        }
 
         const reader = response.body.getReader();
         const decoder = new TextDecoder("utf-8");
@@ -114,7 +139,11 @@ async function handleSend() {
             }
         }
     } catch (err) {
-        contentDiv.innerHTML = `**Error:** Could not connect to the server. ${err.message}`;
+        if (err.message.includes("401")) {
+            contentDiv.innerHTML = `**Error:** Unauthorized. The password you entered is incorrect or missing.`;
+        } else {
+            contentDiv.innerHTML = `**Error:** Could not connect to the server. ${err.message}`;
+        }
     }
 }
 
