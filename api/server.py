@@ -177,16 +177,12 @@ async def chat_stream(request: ChatRequest):
             )
             await asyncio.sleep(0.05)
 
-            # Pre-format images into absolute Markdown links so the LLM simply copies them
+            # Pre-format images into absolute HTML img tags to prevent LLM markdown corruption
             def replace_img(m):
                 alt = m.group(1)
                 src = m.group(2)
-                url = (
-                    src
-                    if src.startswith("http")
-                    else f"https://www.site3d.co.uk/help/{src}"
-                )
-                return f"![{alt}]({url})"
+                url = src if src.startswith("http") else f"https://www.site3d.co.uk/help/{src}"
+                return f'<img src="{url}" alt="{alt}" class="inline-icon" />'
 
             context_str = re.sub(
                 r"\[Screenshot: [^\]]+? - ([^\]]+?)\]\(([^)]+?)\)",
@@ -213,6 +209,7 @@ async def chat_stream(request: ChatRequest):
                     )
                     first = False
                 if chunk_text:
+                    print(chunk_text, end="", flush=True)
                     yield json.dumps({"chunk": chunk_text}) + "\n"
         except Exception as e:
             yield json.dumps({"error": str(e)}) + "\n"

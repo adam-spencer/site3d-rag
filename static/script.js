@@ -126,7 +126,9 @@ async function handleSend() {
                         }
                         if (data.chunk) {
                             aiText += data.chunk;
-                            contentDiv.innerHTML = marked.parse(aiText);
+                            // Auto-correct LLM hallucinations where it aggressively truncates the '/images/' directory from the generated HTML SRC path
+                            let correctedText = aiText.replace(/https:\/\/(www\.)?site3d\.co\.uk\/help\/(?!images\/)([^"'\)\]>\s]+\.(png|jpg|jpeg|gif))/gi, "https://www.site3d.co.uk/help/images/$2");
+                            contentDiv.innerHTML = marked.parse(correctedText);
                         }
                         if (data.error) {
                             contentDiv.innerHTML = `**Error:** ${data.error}`;
