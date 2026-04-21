@@ -172,22 +172,29 @@ async def chat_stream(request: ChatRequest):
             await asyncio.sleep(0.05)
 
             # Convert markdown images to HTML to prevent LLM mangling
-            def replace_img(m):
+            # Convert markdown images to HTML to prevent LLM mangling
+            def replace_icon(m):
                 alt = m.group(1)
                 src = m.group(2)
                 url = src if src.startswith("http") else f"https://www.site3d.co.uk/help/{src}"
                 return f'<img src="{url}" alt="{alt}" class="inline-icon" />'
 
+            def replace_screenshot(m):
+                alt = m.group(1)
+                src = m.group(2)
+                url = src if src.startswith("http") else f"https://www.site3d.co.uk/help/{src}"
+                return f'<img src="{url}" alt="{alt}" class="doc-screenshot" />'
+
             context_str = re.sub(
                 r"\[Screenshot: [^\]]+? - ([^\]]+?)\]\(([^)]+?)\)",
-                replace_img,
+                replace_screenshot,
                 context_str,
             )
             context_str = re.sub(
-                r"\[Screenshot: ([^\]]+?)\]\(([^)]+?)\)", replace_img, context_str
+                r"\[Screenshot: ([^\]]+?)\]\(([^)]+?)\)", replace_screenshot, context_str
             )
             context_str = re.sub(
-                r"\[Icon: ([^\]]+?)\]\(([^)]+?)\)", replace_img, context_str
+                r"\[Icon: ([^\]]+?)\]\(([^)]+?)\)", replace_icon, context_str
             )
 
             chain = prompt | llm | StrOutputParser()
