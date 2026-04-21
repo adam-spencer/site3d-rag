@@ -17,6 +17,9 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import Runnable
 from langchain_google_genai import ChatGoogleGenerativeAI
 from pydantic import BaseModel
+from slowapi import Limiter
+from slowapi.errors import RateLimitExceeded
+from slowapi.util import get_remote_address
 
 from api import vector_store
 from api.logging_config import configure_logging
@@ -24,6 +27,19 @@ from api.logging_config import configure_logging
 load_dotenv()
 configure_logging()
 logger = logging.getLogger(__name__)
+
+
+def _client_key(request: Request) -> str:
+    """Rate-limit key.
+
+    HuggingFace Spaces and most cloud platforms sit behind a proxy, so
+    ``request.client.host`` is the proxy IP. Prefer the first entry in
+    ``X-Forwarded-For`` when present.
+    """
+    forwarded = request.headers.get("x-forwarded-for")
+    if forwarded:
+        return forwarded.split(",")[0].strip()
+    return get_remote_address(request)
 
 
 PROMPT_TEMPLATE = """You are an expert engineering assistant for the Site3D software. Use the following context to answer the user's question clearly and accurately.
@@ -96,16 +112,28 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     yield
 
 
-def create_app(*, with_lifespan: bool = True) -> FastAPI:
+def create_app(
+    *,
+    with_lifespan: bool = True,
+    rate_limit: str | None = None,
+) -> FastAPI:
     """Build the FastAPI app.
 
     Tests should call ``create_app(with_lifespan=False)`` and populate
-    ``app.state`` manually to avoid booting ChromaDB and Gemini.
+    ``app.state`` manually to avoid booting ChromaDB and Gemini. Each app
+    gets its own Limiter instance so tests do not share rate-limit state.
     """
     app = FastAPI(
         title="Site3D RAG Demo",
         lifespan=lifespan if with_lifespan else None,
     )
+
+    effective_limit = rate_limit if rate_limit is not None else os.getenv(
+        "CHAT_RATE_LIMIT", "10/minute"
+    )
+    app_limiter = Limiter(key_func=_client_key)
+    app.state.limiter = app_limiter
+    app.add_exception_handler(RateLimitExceeded, _rate_limit_handler)
 
     os.makedirs("static", exist_ok=True)
     app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -115,12 +143,23 @@ def create_app(*, with_lifespan: bool = True) -> FastAPI:
         return FileResponse("static/index.html")
 
     @app.post("/chat/stream")
+    @app_limiter.limit(effective_limit)
     async def chat_stream(
         request: Request, body: ChatRequest
     ) -> StreamingResponse:
         return await _handle_chat_stream(request.app, body)
 
     return app
+
+
+async def _rate_limit_handler(request: Request, exc: Exception) -> StreamingResponse:
+    # slowapi passes a RateLimitExceeded; the signature must accept Exception
+    # to satisfy FastAPI's exception-handler contract.
+    return _ndjson_error(
+        "Rate limit exceeded. Please slow down and try again shortly.",
+        code="rate_limited",
+        status=429,
+    )
 
 
 def _ndjson_error(message: str, code: str, status: int = 200) -> StreamingResponse:

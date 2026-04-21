@@ -17,6 +17,7 @@ dependencies = [
     "python-dotenv>=1.2.2",
     "requests>=2.33.1",
     "sentence-transformers>=5.4.1",
+    "slowapi>=0.1.9",
     "uvicorn>=0.44.0",
 ]
 
