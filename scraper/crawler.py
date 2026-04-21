@@ -1,8 +1,11 @@
+import logging
 import time
 import requests
 from urllib.parse import urljoin, urldefrag, urlparse
 from bs4 import BeautifulSoup
 from typing import Dict
+
+logger = logging.getLogger(__name__)
 
 
 class Site3DCrawler:
@@ -31,7 +34,7 @@ class Site3DCrawler:
         return True
 
     def crawl(self, max_pages: int = 100) -> Dict[str, str]:
-        print(f"Starting crawler from {self.base_url}")
+        logger.info("Starting crawler from %s", self.base_url)
 
         while self.queue and len(self.visited) < max_pages:
             current_url = self.queue.pop(0)
@@ -41,7 +44,7 @@ class Site3DCrawler:
                 continue
 
             self.visited.add(clean_url)
-            print(f"[{len(self.visited)}/{max_pages}] Fetching: {clean_url}")
+            logger.info("[%d/%d] Fetching: %s", len(self.visited), max_pages, clean_url)
 
             try:
                 response = requests.get(clean_url, headers=self.headers, timeout=10)
@@ -64,10 +67,10 @@ class Site3DCrawler:
                         self.queue.append(defrag_url)
 
             except requests.RequestException as e:
-                print(f"[!] Failed to fetch {clean_url}: {e}")
+                logger.warning("Failed to fetch %s: %s", clean_url, e)
 
             # Rate-limit
             time.sleep(1.0)
 
-        print(f"Crawl completed. Successfully fetched {len(self.pages)} pages.")
+        logger.info("Crawl completed. Successfully fetched %d pages.", len(self.pages))
         return self.pages

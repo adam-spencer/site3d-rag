@@ -1,8 +1,11 @@
 import json
+import logging
 import os
 from langchain_chroma import Chroma
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_core.documents import Document
+
+logger = logging.getLogger(__name__)
 
 
 def load_chunks(file_path: str = "data/chunks.jsonl") -> list:
@@ -35,19 +38,19 @@ def get_vector_store():
     persist_directory = "./data/chroma_db"
 
     if os.path.exists(persist_directory) and os.listdir(persist_directory):
-        print("Loading existing Chroma database...")
+        logger.info("Loading existing Chroma database from %s", persist_directory)
         db = Chroma(persist_directory=persist_directory, embedding_function=embeddings)
     else:
-        print("Creating new Chroma database from chunks...")
+        logger.info("Creating new Chroma database from chunks")
         docs = load_chunks()
         if not docs:
-            raise Exception(
-                "No chunks found. Have you run run_scrape.py to generate data/chunks.jsonl?"
+            raise RuntimeError(
+                "No chunks found. Run 'python -m scraper' to generate data/chunks.jsonl."
             )
         db = Chroma.from_documents(
             documents=docs, embedding=embeddings, persist_directory=persist_directory
         )
-        print(f"Created Vector Store with {len(docs)} documents.")
+        logger.info("Created vector store with %d documents", len(docs))
 
     return db
 
