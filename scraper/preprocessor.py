@@ -1,16 +1,25 @@
 import os
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, Tag
 from typing import Tuple
 
 
-def is_icon(img, filename: str) -> bool:
+def _attr(img: Tag, name: str, default: str = "") -> str:
+    """Return a single-string attribute value. bs4 returns list[str] for
+    multi-valued attributes like ``class``; we never use those here."""
+    value = img.get(name, default)
+    if isinstance(value, list):
+        return " ".join(value)
+    return value
+
+
+def is_icon(img: Tag, filename: str) -> bool:
     """Heuristic check for icon-sized images."""
     keywords = ["icon", "button", "btn", "toolbar", "small"]
     if any(keyword in filename.lower() for keyword in keywords):
         return True
 
-    width = img.get("width")
-    height = img.get("height")
+    width = _attr(img, "width")
+    height = _attr(img, "height")
 
     try:
         if width and int(width) <= 48 and height and int(height) <= 48:
@@ -27,11 +36,11 @@ def clean_filename_for_icon(filename: str) -> str:
     return name_without_ext.replace("_", " ").replace("-", " ").strip()
 
 
-def process_image_element(img) -> str:
+def process_image_element(img: Tag) -> str:
     """Convert an img tag to a markdown placeholder."""
-    src = img.get("src", "")
+    src = _attr(img, "src")
     filename = os.path.basename(src) if src else "unknown"
-    alt_text = img.get("alt", "").strip()
+    alt_text = _attr(img, "alt").strip()
 
     if is_icon(img, filename):
         if alt_text:

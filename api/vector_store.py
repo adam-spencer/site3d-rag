@@ -1,15 +1,18 @@
 import json
 import logging
 import os
+from typing import Any
+
 from langchain_chroma import Chroma
-from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_core.documents import Document
+from langchain_core.runnables import Runnable
+from langchain_huggingface import HuggingFaceEmbeddings
 
 logger = logging.getLogger(__name__)
 
 
-def load_chunks(file_path: str = "data/chunks.jsonl") -> list:
-    documents = []
+def load_chunks(file_path: str = "data/chunks.jsonl") -> list[Document]:
+    documents: list[Document] = []
     if not os.path.exists(file_path):
         return documents
 
@@ -20,7 +23,7 @@ def load_chunks(file_path: str = "data/chunks.jsonl") -> list:
             data = json.loads(line)
             # Flatten nested metadata for Chroma compatibility
             metadata = data.get("metadata", {})
-            flat_meta = {}
+            flat_meta: dict[str, Any] = {}
             for k, v in metadata.items():
                 if isinstance(v, (dict, list)):
                     flat_meta[k] = json.dumps(v)
@@ -33,7 +36,7 @@ def load_chunks(file_path: str = "data/chunks.jsonl") -> list:
     return documents
 
 
-def get_vector_store():
+def get_vector_store() -> Chroma:
     embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
     persist_directory = "./data/chroma_db"
 
@@ -55,7 +58,7 @@ def get_vector_store():
     return db
 
 
-def get_retriever():
+def get_retriever() -> Runnable[str, list[Document]]:
     db = get_vector_store()
     return db.as_retriever(search_kwargs={"k": 5})
 

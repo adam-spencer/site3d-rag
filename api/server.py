@@ -6,7 +6,7 @@ import re
 import secrets
 import time
 from contextlib import asynccontextmanager
-from typing import AsyncIterator
+from typing import Any, AsyncIterator
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request
@@ -53,7 +53,8 @@ class ChatRequest(BaseModel):
 def load_parent_docs(path: str = "data/pages.json") -> dict[str, str]:
     try:
         with open(path, "r", encoding="utf-8") as f:
-            return json.load(f)
+            data: dict[str, str] = json.load(f)
+            return data
     except FileNotFoundError:
         logger.warning(
             "Parent documents file %s not found; running in chunks-only mode.", path
@@ -68,7 +69,7 @@ def load_parent_docs(path: str = "data/pages.json") -> dict[str, str]:
         return {}
 
 
-def build_retriever() -> Runnable | None:
+def build_retriever() -> Runnable[str, list[Any]] | None:
     try:
         return vector_store.get_retriever()
     except Exception:
@@ -76,7 +77,7 @@ def build_retriever() -> Runnable | None:
         return None
 
 
-def build_llm() -> Runnable | None:
+def build_llm() -> Runnable[Any, Any] | None:
     try:
         return ChatGoogleGenerativeAI(
             model="gemini-3.1-flash-lite-preview", temperature=0
@@ -144,8 +145,8 @@ async def _handle_chat_stream(app: FastAPI, body: ChatRequest) -> StreamingRespo
             status=401,
         )
 
-    retriever: Runnable | None = app.state.retriever
-    llm: Runnable | None = app.state.llm
+    retriever: Runnable[Any, Any] | None = app.state.retriever
+    llm: Runnable[Any, Any] | None = app.state.llm
     prompt: ChatPromptTemplate = app.state.prompt
     parent_docs: dict[str, str] = app.state.parent_docs
 
@@ -168,8 +169,8 @@ async def _handle_chat_stream(app: FastAPI, body: ChatRequest) -> StreamingRespo
 
 async def _generate_stream(
     query: str,
-    retriever: Runnable,
-    llm: Runnable,
+    retriever: Runnable[Any, Any],
+    llm: Runnable[Any, Any],
     prompt: ChatPromptTemplate,
     parent_docs: dict[str, str],
 ) -> AsyncIterator[str]:

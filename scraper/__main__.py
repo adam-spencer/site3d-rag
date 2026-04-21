@@ -1,16 +1,18 @@
 import json
 import logging
 
+from langchain_core.documents import Document
+
 from api.logging_config import configure_logging
+from scraper.chunker import chunk_markdown
+from scraper.converter import convert_to_markdown
 from scraper.crawler import Site3DCrawler
 from scraper.preprocessor import process_html
-from scraper.converter import convert_to_markdown
-from scraper.chunker import chunk_markdown
 
 logger = logging.getLogger(__name__)
 
 
-def main():
+def main() -> None:
     configure_logging()
 
     base_url = "https://www.site3d.co.uk/help/index.htm"
@@ -21,8 +23,8 @@ def main():
     crawler = Site3DCrawler(base_url)
     pages = crawler.crawl(max_pages=MAX_PAGES)
 
-    all_chunks = []
-    parent_docs = {}
+    all_chunks: list[Document] = []
+    parent_docs: dict[str, str] = {}
 
     for url, html_content in pages.items():
         logger.info("Processing: %s", url)

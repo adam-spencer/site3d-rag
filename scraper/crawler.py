@@ -9,10 +9,10 @@ logger = logging.getLogger(__name__)
 
 
 class Site3DCrawler:
-    def __init__(self, base_url: str):
+    def __init__(self, base_url: str) -> None:
         self.base_url = base_url
-        self.visited = set()
-        self.queue = [base_url]
+        self.visited: set[str] = set()
+        self.queue: list[str] = [base_url]
         self.pages: Dict[str, str] = {}
         self.headers = {
             "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36",
