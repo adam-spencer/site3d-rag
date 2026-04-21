@@ -3,6 +3,10 @@
 A Retrieval-Augmented Generation (RAG) assistant for searching the [Site3D software](https://www.site3d.co.uk/) engineering documentation through natural language queries.
 Built with a **FastAPI** backend, **LangChain** for orchestration, **ChromaDB** for vector storage, and Google's **Gemini API** for generation. The frontend streams responses in real-time via NDJSON over HTTP.
 
+<div align="center">
+  <video src="https://github.com/user-attachments/assets/24dfe037-4bb3-4abe-841b-87debcf5803c" autoplay loop muted playsinline></video>
+</div>
+
 The project is containerised with **Docker** for deployment to cloud platforms. A live instance is hosted on [HuggingFace Spaces](https://huggingface.co/spaces/adam-spencer/site3d-rag). Please contact me directly for access.
 
 ## Core Tech & Features
