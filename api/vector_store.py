@@ -1,6 +1,9 @@
+import atexit
 import json
 import logging
 import os
+import shutil
+import tempfile
 from typing import Any
 
 from langchain_chroma import Chroma
@@ -41,8 +44,18 @@ def get_vector_store() -> Chroma:
     persist_directory = "./data/chroma_db"
 
     if os.path.exists(persist_directory) and os.listdir(persist_directory):
-        logger.info("Loading existing Chroma database from %s", persist_directory)
-        db = Chroma(persist_directory=persist_directory, embedding_function=embeddings)
+        # Chroma opens SQLite read-write even for queries, which mutates
+        # the underlying file. Copy to a temp dir so the committed DB
+        # stays byte-identical across runs.
+        temp_dir = tempfile.mkdtemp(prefix="site3d_chroma_")
+        logger.info(
+            "Copying Chroma database from %s to %s (read-only source)",
+            persist_directory,
+            temp_dir,
+        )
+        shutil.copytree(persist_directory, temp_dir, dirs_exist_ok=True)
+        atexit.register(shutil.rmtree, temp_dir, ignore_errors=True)
+        db = Chroma(persist_directory=temp_dir, embedding_function=embeddings)
     else:
         logger.info("Creating new Chroma database from chunks")
         docs = load_chunks()
