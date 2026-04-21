@@ -9,19 +9,21 @@ Built with a **FastAPI** backend, **LangChain** for orchestration, **ChromaDB** 
 
 The project is containerised with **Docker** for deployment to cloud platforms. A live instance is hosted on [HuggingFace Spaces](https://huggingface.co/spaces/adam-spencer/site3d-rag). Please contact me directly for access.
 
-## Core Tech & Features
+## Architecture
 
-- **LangChain Orchestration**: Manages the RAG pipeline, from retrieving documents and assembling context through to streaming responses from Gemini.
-- **Streaming Responses**: The backend uses FastAPI's `StreamingResponse` to push NDJSON chunks to the frontend, which parses and renders them incrementally as they arrive.
-- **Containerised Deployment**: Fully packaged in Docker for deployment to platforms like HuggingFace Spaces.
-- **Small-to-Big Retrieval**: ChromaDB identifies the most relevant chunks, then the server expands each match to its full parent page via a prebuilt lookup map (`pages.json`), giving Gemini complete surrounding context before answering.
-- **Fail-Closed Authentication**: The backend rejects any request that doesn't include the correct password (set via environment variable). If the environment variable is missing entirely, a cryptographically random password is generated at startup, making access impossible by default.
-- **Per-IP Rate Limiting**: `slowapi` throttles `/chat/stream` (default `10/minute`, overridable via `CHAT_RATE_LIMIT`). A custom key function reads the first entry of `X-Forwarded-For` so limits behave correctly behind the HuggingFace Spaces proxy. 429 responses are emitted as NDJSON with an `error_code` so the frontend handles them through the same parser as other streaming errors.
-- **Structured Logging & Timings**: All components use the `logging` module through a shared configuration; each query emits a single `INFO` line with retrieval and generation timings (e.g. `retrieval_ms=230 llm_ms=1840 chunks=5 parents=3`). Log level is controllable via `LOG_LEVEL`.
-- **Strict Type Checking**: Full type hints across `api/` and `scraper/`; `mypy --strict` runs clean on every pull request alongside `ruff` and the test suite.
-- **Inline Source Citations**: The prompt instructs Gemini to embed source URLs as inline markdown links. The frontend CSS renders these as highlighted, clickable spans within the response text.
-- **Image Path Correction**: LLMs occasionally drop path segments from URLs. The frontend applies a regex to detect broken documentation image paths and re-insert the missing `/images/` directory before rendering.
-- **ChromaDB & Gemini**: Uses ChromaDB with HuggingFace `all-MiniLM-L6-v2` embeddings for local vector search, and Gemini 2.0 Flash Lite (Preview) for generation.
+- **LangChain orchestration** of the full RAG pipeline: retrieval, context assembly, and streamed generation from Gemini.
+- **Small-to-big retrieval**: ChromaDB finds the best matching chunks, then the server expands each to its full parent page via a prebuilt `pages.json` map so Gemini sees complete surrounding context.
+- **NDJSON streaming**: FastAPI `StreamingResponse` pushes JSON lines to the frontend, which renders incrementally. Errors (auth, rate limits) ride the same channel with an `error_code` so the frontend handles them through one parser.
+- **Inline source citations** embedded by the prompt as Markdown links and styled by the frontend as highlighted, clickable spans.
+- **Local embeddings, hosted LLM**: HuggingFace `all-MiniLM-L6-v2` for vectors; Gemini 3.1 Flash Lite for generation.
+- **Containerised** with Docker; deployed to HuggingFace Spaces.
+
+## Production hardening
+
+- **Fail-closed authentication**: requests without the correct `APP_PASSWORD` are rejected. If the env var is unset, a cryptographically random password is generated at startup — access is impossible by default.
+- **Per-IP rate limiting** via `slowapi` on `/chat/stream` (default `10/minute`, overridable). A custom key function reads the first `X-Forwarded-For` entry so limits work behind the HuggingFace proxy.
+- **Structured logging & timings**: one `INFO` line per query with `retrieval_ms`, `llm_ms`, `chunks`, `parents`. Log level controlled via `LOG_LEVEL`.
+- **Strict typing**: `mypy --strict` runs clean on every PR alongside `ruff` and the test suite.
 
 ## Data Ingestion & Web Scraping
 
